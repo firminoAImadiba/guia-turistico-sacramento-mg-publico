@@ -11,7 +11,7 @@ Este é o repo **público** do TCC do curso de Inteligência Artificial do **Ins
 
 Ele existe para que o **público que assiste à apresentação** possa abrir o site no próprio celular e interagir com uma versão controlada do guia — **sem campo de digitação**, apenas tocando em opções.
 
-A **versão dos apresentadores** (com digitação livre + 50 perguntas e respostas automáticas) fica no repositório privado: `guia-turistico-sacramento-mg`.
+A **versão dos apresentadores** (com digitação livre + 5 perguntas e respostas automáticas) fica no repositório privado: `guia-turistico-sacramento-mg`.
 
 ---
 
@@ -31,8 +31,8 @@ A **versão dos apresentadores** (com digitação livre + 50 perguntas e respost
 ### 2.2. Versão apresentadores (repo privado)
 
 - **Com digitação livre** + atalhos rápidos.
-- **50 pares de pergunta/resposta automáticos** (conteúdo a ser cadastrado — as perguntas e respostas serão enviadas em seguida).
-- Se o texto digitado não bater com nenhuma das 50, o guia mostra uma resposta padrão de ajuda.
+- **5 pares de pergunta/resposta automáticos** (conteúdo a ser cadastrado — as perguntas e respostas serão enviadas em seguida).
+- Se o texto digitado não bater com nenhum dos 5, o guia mostra uma resposta padrão de ajuda.
 - Uso exclusivo de quem apresenta o TCC.
 
 ---
