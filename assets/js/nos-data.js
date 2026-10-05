@@ -608,7 +608,7 @@ const NOS_DATA = {
     "raw": "Ir para NÓ 01"
    },
    "optB": {
-    "label": "Encerrar e voltar ao Menu Principal do Guia Virtual.",
+    "label": "Encerrar e voltar ao Menu Principal do Citypass.",
     "target": "MENU"
    }
   }
@@ -1220,7 +1220,7 @@ const NOS_DATA = {
     "raw": "Ir para NÓ 01"
    },
    "optB": {
-    "label": "Encerrar e voltar ao Menu Principal do Guia Virtual.",
+    "label": "Encerrar e voltar ao Menu Principal do Citypass.",
     "target": "MENU"
    }
   }
@@ -1832,7 +1832,7 @@ const NOS_DATA = {
     "raw": "Ir para NÓ 01"
    },
    "optB": {
-    "label": "Encerrar e voltar ao Menu Principal do Guia Virtual.",
+    "label": "Encerrar e voltar ao Menu Principal do Citypass.",
     "target": "MENU"
    }
   }
@@ -2444,7 +2444,7 @@ const NOS_DATA = {
     "raw": "Ir para NÓ 01"
    },
    "optB": {
-    "label": "Encerrar e voltar ao Menu Principal do Guia Virtual de Sacramento.",
+    "label": "Encerrar e voltar ao Menu Principal do Citypass Sacramento.",
     "target": "MENU"
    }
   }
@@ -3056,7 +3056,7 @@ const NOS_DATA = {
     "raw": "Ir para NÓ 01"
    },
    "optB": {
-    "label": "Encerrar e voltar ao Menu Principal do Guia Virtual de Sacramento.",
+    "label": "Encerrar e voltar ao Menu Principal do Citypass Sacramento.",
     "target": "MENU"
    }
   }
@@ -3668,7 +3668,7 @@ const NOS_DATA = {
     "raw": "Ir para NÓ 01"
    },
    "optB": {
-    "label": "Encerrar e voltar ao Menu Principal do Guia Virtual de Sacramento.",
+    "label": "Encerrar e voltar ao Menu Principal do Citypass Sacramento.",
     "target": "MENU"
    }
   }

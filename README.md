@@ -1,4 +1,4 @@
-# Guia Turístico Virtual de Sacramento – MG (Versão Público)
+# Citypass Sacramento (Versão Público)
 
 > **Versão de demonstração para o público** que assiste à apresentação do TCC.
 > Repositório público derivado do projeto privado dos alunos (onde fica a versão dos apresentadores).
