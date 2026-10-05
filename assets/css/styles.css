@@ -248,10 +248,6 @@ main { height: 100vh; height: 100dvh; }
 .choice-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
 .choice-btn:disabled { opacity: 0.55; cursor: wait; }
 
-.choice-menu-btn {
-    border-style: dashed;
-}
-
 .stream-caret::after {
     content: '▍';
     color: var(--forest-bright);
@@ -314,17 +310,6 @@ main { height: 100vh; height: 100dvh; }
     box-shadow: 0 8px 25px rgba(71, 138, 63, 0.55), 0 0 16px rgba(139, 227, 129, 0.45);
 }
 .start-btn:active { transform: scale(0.98); }
-
-.ai-leadin {
-    font-size: 0.8rem;
-    font-style: italic;
-    color: rgba(139, 227, 129, 0.85);
-}
-
-.ai-meta {
-    font-size: 0.68rem;
-    color: rgba(139, 227, 129, 0.55);
-}
 
 /* ---- 14. Idiomas ---------------------------------------------------------- */
 .lang-btn { transition: all 0.25s ease; }
