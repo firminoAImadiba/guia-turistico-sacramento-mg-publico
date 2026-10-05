@@ -225,3 +225,50 @@ main { height: 100vh; height: 100dvh; }
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ---- 12. Correntes (versão público, sem digitação) ------------------------ */
+#optionsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.choice-btn {
+    width: 100%;
+    text-align: left;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+.choice-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: rgba(71, 138, 63, 0.55);
+    border-color: rgba(139, 227, 129, 0.65);
+    box-shadow: 0 0 0 1px rgba(139, 227, 129, 0.5), 0 4px 14px rgba(71, 138, 63, 0.4);
+}
+.choice-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.choice-btn:disabled { opacity: 0.55; cursor: wait; }
+
+.choice-menu-btn {
+    border-style: dashed;
+}
+
+.stream-caret::after {
+    content: '▍';
+    color: var(--forest-bright);
+    animation: caret-blink 0.9s steps(1) infinite;
+    margin-left: 2px;
+}
+
+@keyframes caret-blink {
+    0%, 55% { opacity: 1; }
+    56%, 100% { opacity: 0; }
+}
+
+.stream-para {
+    animation: slideUp 0.35s ease-out;
+}
+
+.ai-phase {
+    font-size: 0.72rem;
+    color: rgba(139, 227, 129, 0.75);
+}
