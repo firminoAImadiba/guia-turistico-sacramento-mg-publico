@@ -1,6 +1,7 @@
 /* ==========================================================================
-   Guia Virtual de Sacramento - MG
-   Folha de estilos principal
+   Citypass Sacramento (versão PÚBLICO)
+   UI nova: 3 telas (boas-vindas -> temas -> leitura). Texto em primeiro plano,
+   sem pills de tema. CSS puro, mobile-first, safe areas para iOS.
    Paleta floresta: #478a3f (primary) · #375734 (dark) ·
                     #8be381 (bright) · #787d78 (muted)
    ========================================================================== */
@@ -11,344 +12,625 @@
     --forest-dark: #375734;
     --forest-bright: #8be381;
     --forest-muted: #787d78;
+
+    --ink: rgba(238, 246, 235, 0.96);
+    --ink-soft: rgba(214, 232, 210, 0.72);
+    --ink-faint: rgba(214, 232, 210, 0.5);
+
+    --glass-bg: rgba(255, 255, 255, 0.055);
+    --glass-border: rgba(139, 227, 129, 0.16);
+    --glass-border-strong: rgba(139, 227, 129, 0.55);
+
+    --radius: 20px;
+    --radius-sm: 14px;
+    --shadow: 0 18px 40px rgba(10, 18, 9, 0.35);
+
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
 }
 
-/* ---- 2. Base / layout mobile (página nunca rola) ------------------------ */
-html, body { height: 100%; }
+/* ---- 2. Base ------------------------------------------------------------ */
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
 
 body {
-    min-height: 100vh;
-    min-height: 100dvh;
-    background-color: #1e2e1d;
-    /* Só a área de mensagens tem scroll; o resto é fixo */
-    overflow: hidden;
-    overscroll-behavior: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background:
+        radial-gradient(1100px 720px at 88% -12%, rgba(139, 227, 129, 0.13), transparent 60%),
+        radial-gradient(900px 640px at -18% 108%, rgba(139, 227, 129, 0.09), transparent 55%),
+        linear-gradient(166deg, #314b2e 0%, #24381f 52%, #1a2a17 100%);
+    -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior: none;
 }
 
-main { height: 100vh; height: 100dvh; }
-
-/* Respeita a área segura (notch / gestos) no rodapé */
-.safe-bottom {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+button {
+    font-family: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
-/* ---- 3. Ícones SVG ------------------------------------------------------ */
-.icon { width: 1.1em; height: 1.1em; flex-shrink: 0; }
-.icon-lg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+svg { display: inline-block; vertical-align: middle; }
+.ico { width: 1.1em; height: 1.1em; flex-shrink: 0; }
+.ico-xl { width: 2rem; height: 2rem; }
 
-/* ---- 4. Animações ------------------------------------------------------- */
-@keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+/* ---- 3. Telas ----------------------------------------------------------- */
+.screen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh; /* altura fixa: o scroll fica nas areas internas (sem rolagem dupla) */
+    animation: rise 0.34s ease;
 }
 
-@keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
+.screen.hidden { display: none; }
+
+@keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.leaving {
+    opacity: 0;
+    transform: scale(0.985);
+    transition: opacity 0.26s ease, transform 0.26s ease;
 }
 
-@keyframes typing {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-6px); opacity: 1; }
-}
-
-/* ---- 5. Fundo ambiente -------------------------------------------------- */
-.animated-gradient {
-    background: linear-gradient(-45deg, #1a2b1a, #375734, #2a4a28, #478a3f, #1a2b1a);
-    background-size: 400% 400%;
-    animation: gradient-shift 16s ease infinite;
-}
-
-.blob-bg {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(90px);
-    opacity: 0.55;
-    animation: blob 20s infinite ease-in-out;
-}
-
-/* ---- 6. Glassmorphism --------------------------------------------------- */
-.glass {
-    background: rgba(55, 87, 52, 0.35);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 227, 129, 0.25);
+/* ---- 4. Vidro ------------------------------------------------------------
+   Sem backdrop-filter (caro em celular, derruba o scroll para ~30fps):
+   translucidez + borda clara + sombra produzem o mesmo efeito a custo baixo. */
+.glass,
+.glass-strong {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
+        rgba(44, 66, 40, 0.55);
+    border: 1px solid var(--glass-border);
 }
 
 .glass-strong {
-    background: rgba(55, 87, 52, 0.55);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 227, 129, 0.35);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(139, 227, 129, 0.15);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.04)),
+        rgba(40, 61, 37, 0.66);
+    border-color: rgba(139, 227, 129, 0.22);
+    box-shadow: var(--shadow);
 }
 
-.glass-input {
-    background: rgba(55, 87, 52, 0.45);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(120, 125, 120, 0.5);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+/* ---- 5. Topo (menu + leitura) --------------------------------------------- */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: calc(10px + var(--sat)) 16px 10px;
 }
 
-.glass-input:focus {
-    background: rgba(55, 87, 52, 0.65);
-    border-color: rgba(139, 227, 129, 0.7);
-    box-shadow: 0 0 0 3px rgba(71, 138, 63, 0.35), 0 0 18px rgba(139, 227, 129, 0.25);
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
 }
 
-/* ---- 7. Bolhas de mensagem ---------------------------------------------- */
-.bubble-guide {
-    background: rgba(55, 87, 52, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 227, 129, 0.3);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(139, 227, 129, 0.12);
+.brand svg { color: var(--forest-bright); }
+.brand-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.presence {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    text-decoration: none;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.12s ease;
 }
 
-.bubble-user {
-    background: rgba(71, 138, 63, 0.55);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 227, 129, 0.5);
-    box-shadow: 0 4px 20px rgba(71, 138, 63, 0.35), inset 0 1px 0 rgba(139, 227, 129, 0.25);
+.presence:hover { border-color: rgba(139, 227, 129, 0.4); }
+.presence:active { transform: scale(0.97); }
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--forest-bright);
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.2s ease, transform 0.12s ease;
 }
 
-.message-bubble { animation: slideUp 0.3s ease-out; }
+.back-btn:hover { border-color: rgba(139, 227, 129, 0.4); }
+.back-btn:active { transform: scale(0.97); }
 
-/* Quebra palavras longas p/ nunca estourar a borda do dispositivo */
-.bubble-text {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-}
-
-.typing-indicator span {
-    display: inline-block;
-    width: 8px; height: 8px;
-    background: var(--forest-bright);
+.status-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    margin: 0 2px;
-    animation: typing 1.4s infinite ease-in-out;
-}
-.typing-indicator span:nth-child(1) { animation-delay: 0s; }
-.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-/* ---- 8. Atalhos rápidos ------------------------------------------------- */
-.btn-shortcut { transition: all 0.3s ease; flex-shrink: 0; }
-.btn-shortcut:hover {
-    transform: translateY(-2px);
-    background: rgba(71, 138, 63, 0.5);
-    border-color: rgba(139, 227, 129, 0.6);
-    box-shadow: 0 0 0 1px rgba(139, 227, 129, 0.6), 0 4px 12px rgba(71, 138, 63, 0.4), 0 0 8px rgba(139, 227, 129, 0.2);
-    position: relative;
-    z-index: 1;
-}
-.btn-shortcut:active { transform: translateY(0) scale(0.98); }
-
-#shortcutsContainer {
-    padding-top: 12px;
-    margin-top: -8px;
-    padding-bottom: 14px;
-    margin-bottom: -10px;
-    padding-left: 4px;
-    padding-right: 4px;
-    --fade-l: 0;
-    --fade-r: 1;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, black calc(var(--fade-l) * 32px), black calc(100% - var(--fade-r) * 32px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0, black calc(var(--fade-l) * 32px), black calc(100% - var(--fade-r) * 32px), transparent 100%);
+    background: var(--forest-bright);
+    box-shadow: 0 0 8px rgba(139, 227, 129, 0.9);
+    animation: pulse 2.4s ease-in-out infinite;
 }
 
-/* ---- 9. Entrada de texto ------------------------------------------------ */
-.send-btn {
-    width: 52px;
-    height: 52px;
-    padding: 0;
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+}
+
+/* ---- 6. Boas-vindas --------------------------------------------------------- */
+#welcomeScreen {
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.welcome-card {
+    margin: auto;
+    width: 100%;
+    max-width: 26rem;
+    padding: 28px 22px;
+    border-radius: 26px;
+    text-align: center;
+    animation: rise 0.38s ease;
+}
+
+.welcome-ico {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-    background: rgba(71, 138, 63, 0.6);
-    border: 1px solid rgba(139, 227, 129, 0.5);
-    box-sizing: border-box;
-}
-.send-btn:hover {
-    transform: scale(1.05);
-    background: rgba(71, 138, 63, 0.85);
-    box-shadow: 0 8px 25px rgba(71, 138, 63, 0.55), 0 0 16px rgba(139, 227, 129, 0.45);
-}
-.send-btn:active { transform: scale(0.95); }
-.send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-#messageInput {
-    resize: none;
-    overflow-y: hidden;
-    width: 100%;
-    max-width: 100%;
-    height: 52px;
-    min-height: 52px;
-    max-height: 150px;
-    line-height: 1.5;
-    box-sizing: border-box;
-}
-
-/* 16px no mobile evita o zoom automático do iOS ao focar */
-@media (max-width: 639px) {
-    #messageInput { font-size: 16px; }
-}
-
-/* ---- 10. Scrollbars ----------------------------------------------------- */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: rgba(55, 87, 52, 0.3); border-radius: 3px; }
-::-webkit-scrollbar-thumb { background: rgba(139, 227, 129, 0.35); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(139, 227, 129, 0.55); }
-
-.chat-scroll { scrollbar-width: thin; scrollbar-color: rgba(139,227,129,0.35) rgba(55,87,52,0.3); }
-
-/* ---- 11. Acessibilidade ------------------------------------------------- */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* ---- 12. Correntes (versão público, sem digitação) ------------------------ */
-#optionsContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.choice-btn {
-    width: 100%;
-    text-align: left;
-    transition: all 0.25s ease;
-    cursor: pointer;
-}
-.choice-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    background: rgba(71, 138, 63, 0.55);
-    border-color: rgba(139, 227, 129, 0.65);
-    box-shadow: 0 0 0 1px rgba(139, 227, 129, 0.5), 0 4px 14px rgba(71, 138, 63, 0.4);
-}
-.choice-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
-.choice-btn:disabled { opacity: 0.55; cursor: wait; }
-
-.stream-caret::after {
-    content: '▍';
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     color: var(--forest-bright);
-    animation: caret-blink 0.9s steps(1) infinite;
-    margin-left: 2px;
 }
 
-@keyframes caret-blink {
-    0%, 55% { opacity: 1; }
-    56%, 100% { opacity: 0; }
+.welcome-title {
+    margin: 10px 0 0;
+    font-size: clamp(1.35rem, 4.2vw, 1.75rem);
+    line-height: 1.2;
+    font-weight: 800;
 }
 
-.stream-para {
-    animation: slideUp 0.35s ease-out;
-}
-
-.ai-phase {
-    font-size: 0.72rem;
+.welcome-sub {
+    margin: 6px 0 0;
+    font-size: 0.9rem;
     color: rgba(139, 227, 129, 0.75);
 }
 
-/* ---- 13. Boas-vindas + presença de IA -------------------------------------- */
-@keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 8px rgba(139, 227, 129, 0.45), 0 0 3px rgba(139, 227, 129, 0.6); }
-    50% { box-shadow: 0 0 18px rgba(139, 227, 129, 0.85), 0 0 6px rgba(139, 227, 129, 0.9); }
+.welcome-desc {
+    margin: 12px 0 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
 }
 
-.status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 9999px;
-    background-color: var(--forest-bright);
-    animation: pulse-glow 2s ease-in-out infinite;
-    flex-shrink: 0;
+.lang-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 18px;
 }
 
-#welcomeScreen {
-    background: rgba(20, 32, 20, 0.55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: opacity 0.35s ease;
-}
-
-#welcomeScreen.welcome-hide {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.welcome-card { animation: slideUp 0.4s ease-out; }
-
-.start-btn {
-    transition: all 0.3s ease;
-    background: rgba(71, 138, 63, 0.7);
-    border: 1px solid rgba(139, 227, 129, 0.55);
-    animation: pulse-glow 2.4s ease-in-out infinite;
-}
-.start-btn:hover {
-    transform: translateY(-2px) scale(1.01);
-    background: rgba(71, 138, 63, 0.9);
-    box-shadow: 0 8px 25px rgba(71, 138, 63, 0.55), 0 0 16px rgba(139, 227, 129, 0.45);
-}
-.start-btn:active { transform: scale(0.98); }
-
-/* ---- 14. Idiomas ---------------------------------------------------------- */
-.lang-btn { transition: all 0.25s ease; }
-.lang-btn:hover { background: rgba(71, 138, 63, 0.5); }
-.lang-btn.active {
-    background: rgba(71, 138, 63, 0.65);
-    border-color: rgba(139, 227, 129, 0.7);
-    box-shadow: 0 0 0 1px rgba(139, 227, 129, 0.5), 0 0 12px rgba(139, 227, 129, 0.25);
-}
-
-/* ---- 15. Otimização mobile ------------------------------------------------- */
-.btn-shortcut,
-.choice-btn,
-.start-btn,
 .lang-btn {
     min-height: 48px;
+    padding: 11px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-@media (max-width: 639px) {
-    .welcome-card {
-        max-height: 92dvh;
-        overflow-y: auto;
-        padding: 1.25rem;
+.lang-btn.active {
+    background: rgba(71, 138, 63, 0.5);
+    border-color: var(--glass-border-strong);
+    box-shadow: 0 0 12px rgba(139, 227, 129, 0.2);
+}
+
+.start-btn {
+    width: 100%;
+    min-height: 54px;
+    margin-top: 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--forest-primary), var(--forest-dark));
+    border: 1px solid rgba(139, 227, 129, 0.45);
+    color: #eaf6e7;
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: 0 12px 28px rgba(71, 138, 63, 0.38);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.start-btn:active { transform: scale(0.98); }
+
+/* ---- 7. Menu de temas -------------------------------------------------------- */
+.menu-body {
+    flex: 1;
+    width: 100%;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 6px 16px calc(20px + var(--sab));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+}
+
+.eyebrow {
+    margin: 6px 0 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(139, 227, 129, 0.7);
+}
+
+.theme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    text-align: left;
+    transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.theme-btn:active {
+    transform: scale(0.985);
+    background: rgba(71, 138, 63, 0.28);
+    border-color: rgba(139, 227, 129, 0.35);
+}
+
+.t-name {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--ink);
+}
+
+.t-sub {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--ink-soft);
+}
+
+.theme-btn .chev {
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    color: rgba(139, 227, 129, 0.6);
+}
+
+/* ---- 8. Leitura: texto em destaque --------------------------------------------- */
+.reader {
+    flex: 1;
+    width: 100%;
+    padding: 4px 16px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+}
+
+#answerCard,
+.thinking {
+    width: 100%;
+    max-width: 41rem;
+    margin: 0 auto;
+}
+
+.thinking {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 6px;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+}
+
+.thinking.hidden { display: none; }
+
+.dots {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--forest-bright);
+    opacity: 0.35;
+    animation: bump 1.2s ease-in-out infinite;
+}
+
+.dots span:nth-child(2) { animation-delay: 0.15s; }
+.dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bump {
+    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.answer {
+    padding: 22px 20px 24px;
+    border-radius: var(--radius);
+    animation: answerIn 0.5s cubic-bezier(0.22, 0.75, 0.28, 1);
+}
+
+.answer.hidden { display: none; }
+
+/* Card desce suave ao aparecer */
+@keyframes answerIn {
+    from { opacity: 0; transform: translateY(-14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.answer p {
+    margin: 0 0 14px;
+    font-size: 1.06rem;
+    line-height: 1.68;
+    color: var(--ink);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    animation: paraIn 0.32s ease;
+    transition: filter 0.45s ease;
+}
+
+/* Motion blur leve: só o parágrafo em digitação, raio mínimo (barato na GPU) */
+.answer p.typing {
+    filter: blur(0.5px);
+}
+
+@keyframes paraIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.answer p:last-child { margin-bottom: 0; }
+
+.stream-caret p:last-child::after {
+    content: "▍";
+    margin-left: 2px;
+    color: var(--forest-bright);
+    animation: blink 1s steps(2) infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+/* ---- 9. Barra de opções ----------------------------------------------------------- */
+.options-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 12px 16px calc(12px + var(--sab));
+    background: linear-gradient(180deg,
+        rgba(26, 42, 24, 0) 0%,
+        rgba(21, 33, 19, 0.9) 38%,
+        rgba(16, 26, 15, 0.98) 100%);
+    border-top: 1px solid rgba(139, 227, 129, 0.1);
+}
+
+.option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 13px 16px;
+    border-radius: 16px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+        rgba(44, 66, 40, 0.6);
+    border: 1px solid var(--glass-border);
+    text-align: left;
+    transition: transform 0.12s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.option-btn:active {
+    transform: scale(0.985);
+    border-color: rgba(139, 227, 129, 0.4);
+}
+
+.option-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+    transform: none;
+}
+
+.option-btn .opt-text {
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--ink);
+}
+
+.option-btn .chev {
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    color: rgba(139, 227, 129, 0.65);
+}
+
+/* ---- 10. Telas mais largas -------------------------------------------------------- */
+@media (min-width: 640px) {
+    .options-bar {
+        flex-direction: row;
+        align-items: stretch;
+        padding-left: 32px;
+        padding-right: 32px;
     }
 
-    .choice-btn {
-        padding: 1rem;
-        font-size: 1rem;
-        line-height: 1.4;
-    }
+    .option-btn { flex: 1; }
 
-    .btn-shortcut {
-        padding-top: 0.85rem;
-        padding-bottom: 0.85rem;
-        font-size: 0.95rem;
+    .topbar,
+    .reader,
+    .menu-body,
+    .options-bar {
+        padding-left: 32px;
+        padding-right: 32px;
     }
+}
 
-    .answer-body p {
-        font-size: 0.95rem;
-        line-height: 1.65;
-    }
+/* ---- 11. Página da IA (DeepSeek V4.1 Flash Free) ---------------------------------- */
+.ia-main {
+    flex: 1;
+    width: 100%;
+    padding: 4px 16px calc(20px + var(--sab));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+}
+
+.ia-hero {
+    width: 100%;
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 30px 22px 26px;
+    border-radius: 26px;
+    text-align: center;
+}
+
+.ia-orb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%,
+        rgba(139, 227, 129, 0.35), rgba(71, 138, 63, 0.18) 62%);
+    border: 1px solid rgba(139, 227, 129, 0.45);
+    color: var(--forest-bright);
+    box-shadow: 0 0 26px rgba(139, 227, 129, 0.25);
+}
+
+.ia-name {
+    margin: 12px 0 0;
+    font-size: clamp(1.3rem, 4.4vw, 1.7rem);
+    font-weight: 800;
+    line-height: 1.22;
+}
+
+.ia-sub {
+    margin: 8px 0 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: rgba(139, 227, 129, 0.8);
+}
+
+.ia-desc {
+    margin: 12px 0 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
+
+.ia-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.ia-chip {
+    padding: 13px 13px 12px;
+    border-radius: 16px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+        rgba(44, 66, 40, 0.48);
+    border: 1px solid var(--glass-border);
+}
+
+.chip-t {
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.chip-d {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.76rem;
+    line-height: 1.42;
+    color: var(--ink-soft);
+}
+
+.ia-cta {
+    display: block;
+    margin-top: 20px;
+    padding: 15px 16px;
+    min-height: 52px;
+    text-align: center;
+    text-decoration: none;
+    line-height: 1.3;
+}
+
+.ia-note {
+    margin: 18px 0 0;
+    text-align: center;
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+}
+
+/* ---- 12. Acessibilidade ------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .screen,
+    .welcome-card,
+    .answer,
+    .answer p { animation: none; }
+    .status-dot,
+    .dots span,
+    .stream-caret p:last-child::after { animation: none; }
+    .answer p { transition: none; }
+    .answer p.typing { filter: none; }
 }

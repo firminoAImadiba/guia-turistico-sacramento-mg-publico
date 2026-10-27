@@ -1,24 +1,29 @@
 /* ==========================================================================
    Citypass Sacramento (versão PÚBLICO)
-   Painel de resposta única + 2 opções.
-   Interface em PT/EN/ES/FR (assets/js/i18n.js). Conteúdo dos 216 nós em PT-BR
-   nos dados e traduzido sob demanda com cache local.
+   Fluxo em 3 telas: Boas-vindas -> Menu de temas -> Leitura.
+   O texto da resposta é o protagonista; no fim, 2 botões de decisão.
+   "Menu" volta à tela de temas. Interface em PT/EN/ES/FR (i18n.js);
+   conteúdo dos 216 nós traduzido sob demanda, com cache local.
    ========================================================================== */
 'use strict';
 
 /* ---- 1. Referências de DOM ---------------------------------------------- */
-const messagesContainer = document.getElementById('messagesContainer');
-const typingIndicator = document.getElementById('typingIndicator');
-const typingPhase = document.getElementById('typingPhase');
-const shortcutsContainer = document.getElementById('shortcutsContainer');
-const shortcutButtons = document.querySelectorAll('[data-tema]');
-const dockSection = document.getElementById('dockSection');
-const optionsContainer = document.getElementById('optionsContainer');
 const welcomeScreen = document.getElementById('welcomeScreen');
 const startBtn = document.getElementById('startBtn');
-const headerSub = document.getElementById('headerSub');
-const temasLabel = document.getElementById('temasLabel');
+const welcomeSub = document.getElementById('welcomeSub');
 const welcomeDesc = document.getElementById('welcomeDesc');
+const temasLabel = document.getElementById('temasLabel');
+const menuScreen = document.getElementById('menuScreen');
+const themeList = document.getElementById('themeList');
+const readerScreen = document.getElementById('readerScreen');
+const backBtn = document.getElementById('backBtn');
+const backLabel = document.getElementById('backLabel');
+const readerMain = document.getElementById('readerMain');
+const thinkingRow = document.getElementById('thinkingRow');
+const thinkingPhase = document.getElementById('thinkingPhase');
+const answerCard = document.getElementById('answerCard');
+const answerBody = document.getElementById('answerBody');
+const optionsBar = document.getElementById('optionsBar');
 const badgeTexts = document.querySelectorAll('.badge-text');
 const langButtons = document.querySelectorAll('[data-lang]');
 const metaDesc = document.querySelector('meta[name="description"]');
@@ -27,6 +32,7 @@ const metaDesc = document.querySelector('meta[name="description"]');
 let isBusy = false;
 let started = false;
 let current = null; // { tema, num }
+let session = 0;    // invalida gerações pendentes ao cancelar (ex.: Menu)
 let lang = 'pt';
 try {
     const saved = localStorage.getItem('citypass_lang');
@@ -35,36 +41,9 @@ try {
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function T() {
-    return STR[lang] || STR.pt;
-}
+function T() { return STR[lang] || STR.pt; }
 
-/* ---- 3. Atalhos: fade nas bordas ------------------------------------------ */
-function updateShortcutsFade() {
-    if (!shortcutsContainer) return;
-    const maxScroll = shortcutsContainer.scrollWidth - shortcutsContainer.clientWidth;
-    const x = shortcutsContainer.scrollLeft;
-    shortcutsContainer.style.setProperty('--fade-l', x > 4 ? '1' : '0');
-    shortcutsContainer.style.setProperty('--fade-r', x < maxScroll - 4 ? '1' : '0');
-}
-
-if (shortcutsContainer) {
-    shortcutsContainer.addEventListener('scroll', updateShortcutsFade, { passive: true });
-    window.addEventListener('resize', updateShortcutsFade);
-    updateShortcutsFade();
-}
-
-/* ---- 4. Utilidades -------------------------------------------------------- */
-function scrollToBottom() {
-    messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
+/* ---- 3. Utilidades -------------------------------------------------------- */
 function wait(ms) {
     return new Promise(function (r) { setTimeout(r, ms); });
 }
@@ -79,61 +58,79 @@ function getNode(tema, num) {
     return null;
 }
 
-function temaTitulo(id) {
+function temaInfo(id) {
     const t = T().temas[id];
-    if (t) return t[0];
+    if (t) return { nome: t[0], sub: t[1] };
     for (let i = 0; i < TEMAS.length; i++) {
-        if (TEMAS[i].id === id) return TEMAS[i].titulo;
+        if (TEMAS[i].id === id) return { nome: TEMAS[i].titulo, sub: TEMAS[i].desc };
     }
-    return id;
+    return { nome: id, sub: '' };
 }
 
-/* ---- 5. Idioma -------------------------------------------------------------- */
+/* ---- 4. Idioma -------------------------------------------------------------- */
 function applyLang() {
     const s = T();
     document.documentElement.lang = s.htmlLang;
     document.title = s.title;
     if (metaDesc) metaDesc.setAttribute('content', s.metaDesc);
-    if (headerSub) headerSub.textContent = s.headerSub;
-    if (temasLabel) temasLabel.textContent = s.temasLabel;
+    if (welcomeSub) welcomeSub.textContent = s.headerSub;
     if (welcomeDesc) welcomeDesc.textContent = s.welcomeDesc;
+    if (temasLabel) temasLabel.textContent = s.temasLabel;
+    if (backLabel) backLabel.textContent = s.back;
     if (startBtn && !started) startBtn.textContent = s.start;
     badgeTexts.forEach(function (el) { el.textContent = s.badge; });
-    shortcutButtons.forEach(function (btn) {
-        const t = s.temas[btn.dataset.tema];
-        const span = btn.querySelector('span');
-        if (t && span) span.textContent = t[0];
-    });
     langButtons.forEach(function (btn) {
         btn.classList.toggle('active', btn.dataset.lang === lang);
     });
-    const sectionTemas = document.querySelector('section[aria-label="Temas"]');
-    if (sectionTemas) sectionTemas.setAttribute('aria-label', s.ariaTemas);
-    const sectionChat = document.querySelector('section[aria-label="Conversa"], section[aria-label="Answer"], section[aria-label="Respuesta"], section[aria-label="Réponse"]');
-    if (sectionChat) sectionChat.setAttribute('aria-label', s.ariaChat);
-    if (dockSection) dockSection.setAttribute('aria-label', s.ariaOpts);
+    buildThemeList();
     try {
         localStorage.setItem('citypass_lang', lang);
     } catch (e) { /* sem storage */ }
-    if (started && !current) renderPlaceholder();
 }
 
 function setLang(next) {
     if (!STR[next] || next === lang) return;
     lang = next;
     applyLang();
-    if (started && current && !isBusy) {
-        isBusy = true;
-        setOptionsEnabled(false);
-        showNodeInternal(current.tema, current.num).then(function () {
-            isBusy = false;
-        });
-    }
 }
 
-/* ---- 6. Tradução sob demanda (com cache) -------------------------------------
-   Interface (botões, títulos, fases) traduzida manualmente em i18n.js.
-   Conteúdo dos nós: MyMemory -> Google (fallback) -> texto original.
+/* ---- 5. Telas ----------------------------------------------------------------- */
+function showScreen(el) {
+    [welcomeScreen, menuScreen, readerScreen].forEach(function (s) {
+        if (!s) return;
+        s.classList.toggle('hidden', s !== el);
+    });
+    window.scrollTo(0, 0);
+}
+
+function showMenu() {
+    session++;        // cancela qualquer geração em andamento
+    isBusy = false;   // novo fluxo virá com sessão própria
+    current = null;
+    showScreen(menuScreen);
+}
+
+function buildThemeList() {
+    if (!themeList) return;
+    themeList.innerHTML = '';
+    TEMAS.forEach(function (t) {
+        const info = temaInfo(t.id);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'theme-btn glass';
+        btn.innerHTML =
+            '<span class="t-text"><span class="t-name"></span><span class="t-sub"></span></span>' +
+            '<svg class="chev"><use href="#i-chev-right"/></svg>';
+        btn.querySelector('.t-name').textContent = info.nome;
+        btn.querySelector('.t-sub').textContent = info.sub;
+        btn.addEventListener('click', function () { startTema(t.id); });
+        themeList.appendChild(btn);
+    });
+}
+
+/* ---- 6. Tradução sob demanda (com cache) ----------------------------------------
+   Interface traduzida manualmente em i18n.js. Conteúdo dos nós:
+   MyMemory -> Google (fallback) -> texto original.
    Cache persistente: o que já foi visto não é traduzido de novo. */
 const mtMemCache = {};
 let mtStore = {};
@@ -251,6 +248,7 @@ function splitChunks(text, maxLen) {
 }
 
 async function translateText(text, target) {
+    if (!text) return '';
     const chunks = splitChunks(text, 450);
     const parts = await Promise.all(chunks.map(function (c) {
         return translateChunk(c, target);
@@ -274,141 +272,233 @@ async function localizeNode(node) {
     return { text: results[0], optA: results[1], optB: results[2] };
 }
 
-/* ---- 7. Indicador de geração ----------------------------------------------- */
-function showTyping() {
-    typingIndicator.classList.remove('hidden');
-    typingIndicator.classList.add('flex');
-    scrollToBottom();
-}
-
-function hideTyping() {
-    typingIndicator.classList.add('hidden');
-    typingIndicator.classList.remove('flex');
-}
-
-async function aiThink(textLen) {
-    showTyping();
+/* ---- 7. Indicador de geração --------------------------------------------------
+   ~7s no total: 75% "Pensando..." + 25% "Escrevendo resposta...".
+   Retorna false quando a geração foi cancelada (sessão mudou). */
+async function aiThink(id) {
+    thinkingRow.classList.remove('hidden');
+    answerCard.classList.add('hidden');
+    readerMain.scrollTop = 0;
     const phases = T().think;
-    const base = Math.min(500 + textLen * 0.3, 1700);
-    const step = base / phases.length;
+    const total = reduceMotion ? 700 : 7000;
+    const parts = [0.75, 0.25, 0];
     for (let i = 0; i < phases.length; i++) {
-        typingPhase.textContent = phases[i];
-        scrollToBottom();
-        await wait(reduceMotion ? 60 : step + Math.random() * 160);
+        if (id !== session) return false;
+        thinkingPhase.textContent = phases[i];
+        await wait(total * (parts[i] || 0));
     }
+    return id === session;
 }
 
-/* ---- 8. Painel de resposta --------------------------------------------------- */
+function hideThinking() {
+    thinkingRow.classList.add('hidden');
+}
+
+/* ---- 8. Resposta (texto em destaque, letra por letra) --------------------------- */
 function splitParagraphs(text) {
     return text.split(/\n+/).map(function (p) { return p.trim(); }).filter(Boolean);
 }
 
-function renderPlaceholder() {
-    messagesContainer.innerHTML =
-        '<p class="text-center text-sm sm:text-base" style="color: rgba(220,235,220,0.6);">' +
-        escapeHtml(T().placeholder) + '</p>';
+/* Acompanha o texto que está sendo digitado; desliga se a pessoa rolar pra cima. */
+let autoFollow = true;
+let activeStream = null;
+
+if (readerMain) {
+    readerMain.addEventListener('scroll', function () {
+        autoFollow = readerMain.scrollHeight - readerMain.scrollTop - readerMain.clientHeight < 48;
+    }, { passive: true });
+
+    readerMain.addEventListener('click', function () {
+        if (activeStream) activeStream.skip();
+    });
 }
 
-async function streamAnswer(fullText) {
-    messagesContainer.innerHTML = '';
-    const card = document.createElement('div');
-    card.className = 'message-bubble glass-strong rounded-3xl shadow-2xl px-5 py-4 sm:px-6 sm:py-5';
-    card.innerHTML = '<div class="answer-body space-y-3 stream-caret"></div>';
-    messagesContainer.appendChild(card);
-    const body = card.querySelector('.answer-body');
-    const paras = splitParagraphs(fullText);
-    for (let i = 0; i < paras.length; i++) {
-        const p = document.createElement('p');
-        p.className = 'stream-para bubble-text text-white text-sm sm:text-base leading-relaxed';
-        p.style.whiteSpace = 'pre-wrap';
-        p.innerHTML = escapeHtml(paras[i]).replace(/\n/g, '<br>');
-        body.appendChild(p);
-        scrollToBottom();
-        await wait(reduceMotion ? 30 : 200 + Math.random() * 220);
-    }
-    body.classList.remove('stream-caret');
-    scrollToBottom();
+/* Digita a resposta caractere por caractere, em ritmo por tempo (não por
+   quadro, então funciona igual em tela de 60/120Hz). A duração cresce com o
+   tamanho do texto: ~5s nos curtos, ~10s nos longos. Toque na tela revela tudo. */
+function streamAnswer(fullText, id) {
+    return new Promise(function (resolve) {
+        answerBody.innerHTML = '';
+        answerBody.classList.add('stream-caret');
+        answerCard.classList.remove('hidden');
+        autoFollow = true;
+
+        const paras = splitParagraphs(fullText);
+        // Ritmo: 4,2s + 5ms por caractere, limitado entre 5,6s e 11s.
+        const targetMs = Math.min(11000, Math.max(5600, 4200 + fullText.length * 5));
+        const cps = reduceMotion ? 1e9 : fullText.length / (targetMs / 1000);
+        let acc = 0;
+        let last = 0;
+
+        let pi = 0;       // parágrafo atual
+        let ci = 0;       // letra atual dentro do parágrafo
+        let pEl = null;   // <p> em digitação
+        let finished = false;
+        let rafId = 0;
+
+        function newPara() {
+            pEl = document.createElement('p');
+            pEl.className = 'typing'; // blur leve enquanto digita
+            answerBody.appendChild(pEl);
+        }
+
+        function closePara() {
+            if (pEl) pEl.classList.remove('typing');
+            pEl = null;
+        }
+
+        function settle(ok) {
+            if (finished) return;
+            finished = true;
+            if (rafId) cancelAnimationFrame(rafId);
+            answerBody.classList.remove('stream-caret');
+            for (let k = 0; k < answerBody.children.length; k++) {
+                answerBody.children[k].classList.remove('typing');
+            }
+            activeStream = null;
+            if (ok && autoFollow) readerMain.scrollTop = readerMain.scrollHeight;
+            resolve(ok);
+        }
+
+        function revealRest() {
+            while (pi < paras.length) {
+                if (!pEl) newPara();
+                const t = paras[pi];
+                if (ci >= t.length) { closePara(); pi++; ci = 0; continue; }
+                pEl.textContent = t;
+                ci = t.length;
+            }
+            settle(true);
+        }
+
+        activeStream = { skip: revealRest };
+
+        function frame(now) {
+            if (id !== session) { settle(false); return; }
+            if (pi >= paras.length) { settle(true); return; }
+            if (!last) last = now;
+            const dt = Math.min(now - last, 64); // aba lenta: não despeja o texto de uma vez
+            last = now;
+            acc += cps * (dt / 1000);
+            let budget = Math.floor(acc);
+            acc -= budget;
+            while (budget > 0 && pi < paras.length) {
+                if (!pEl) newPara();
+                const t = paras[pi];
+                if (ci >= t.length) { closePara(); pi++; ci = 0; continue; }
+                const take = Math.min(budget, t.length - ci);
+                ci += take;
+                budget -= take;
+                pEl.textContent = t.slice(0, ci);
+            }
+            if (autoFollow) {
+                // descida suave: persegue o fim do texto com inércia por quadro
+                const dy = readerMain.scrollHeight - readerMain.scrollTop;
+                readerMain.scrollTop = dy > 2
+                    ? readerMain.scrollTop + dy * 0.16
+                    : readerMain.scrollHeight;
+            }
+            rafId = requestAnimationFrame(frame);
+        }
+
+        if (!paras.length) { settle(true); return; }
+        rafId = requestAnimationFrame(frame);
+    });
 }
 
-/* ---- 9. Opções -------------------------------------------------------------- */
-function setOptionsEnabled(enabled) {
-    const btns = optionsContainer.querySelectorAll('button');
-    btns.forEach(function (b) { b.disabled = !enabled; });
-}
-
-function hideDock() {
-    dockSection.classList.add('hidden');
-    optionsContainer.innerHTML = '';
+/* ---- 9. Opções (2 decisões, texto principal) ------------------------------------- */
+function disableOptions() {
+    const btns = optionsBar.querySelectorAll('button');
+    btns.forEach(function (b) { b.disabled = true; });
 }
 
 function addOptionButton(label, onClick) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'choice-btn glass px-4 py-3 rounded-xl text-sm text-white flex items-center gap-2 shadow-md';
-    btn.innerHTML = '<span>' + escapeHtml(label) + '</span>';
+    btn.className = 'option-btn';
+    btn.innerHTML =
+        '<span class="opt-text"></span>' +
+        '<svg class="chev"><use href="#i-chev-right"/></svg>';
+    btn.querySelector('.opt-text').textContent = label;
     btn.addEventListener('click', onClick);
-    optionsContainer.appendChild(btn);
+    optionsBar.appendChild(btn);
     return btn;
 }
 
-function renderNodeOptions(node, tema, labels) {
-    optionsContainer.innerHTML = '';
-    if (node.optA && node.optA.target) {
-        addOptionButton(labels.optA, function () { chooseOption(tema, node, 'A'); });
+function renderNodeOptions(node, labels) {
+    optionsBar.innerHTML = '';
+    const list = [];
+    if (node.optA && labels.optA) list.push({ label: labels.optA, which: 'A' });
+    if (node.optB && labels.optB) list.push({ label: labels.optB, which: 'B' });
+    if (!list.length) {
+        addOptionButton(T().backToMenu, function () { showMenu(); });
+    } else {
+        list.forEach(function (item) {
+            addOptionButton(item.label, function () {
+                chooseOption(current.tema, node, item.which);
+            });
+        });
     }
-    if (node.optB && node.optB.target) {
-        addOptionButton(labels.optB, function () { chooseOption(tema, node, 'B'); });
-    }
-    dockSection.classList.remove('hidden');
-    setOptionsEnabled(true);
 }
 
-/* ---- 10. Fluxo ---------------------------------------------------------------- */
+/* ---- 10. Fluxo -------------------------------------------------------------------- */
 function resolveTarget(tema, opt) {
-    if (!opt || !opt.target) return { tema: tema, num: '01' };
-    if (opt.target === 'MENU') return { tema: tema, num: '01' };
+    if (!opt || !opt.target) return { menu: true };
+    if (opt.target === 'MENU' || opt.target === 'FIM') return { menu: true };
     if (opt.cross) return { tema: opt.cross, num: opt.target };
     return { tema: tema, num: opt.target };
+}
+
+function resetReader() {
+    hideThinking();
+    activeStream = null; // digitação antiga se cancela sozinha (sessão nova)
+    answerBody.classList.remove('stream-caret');
+    answerCard.classList.add('hidden');
+    optionsBar.innerHTML = '';
+    readerMain.scrollTop = 0;
+    autoFollow = true;
+}
+
+async function showNodeInternal(tema, num, id) {
+    const node = getNode(tema, num) || getNode(tema, '01');
+    current = { tema: tema, num: node.num };
+    const localizedPromise = localizeNode(node);
+    const okThink = await aiThink(id);
+    if (!okThink) { hideThinking(); return; }
+    const localized = await localizedPromise;
+    if (id !== session) { hideThinking(); return; }
+    hideThinking();
+    const okStream = await streamAnswer(localized.text, id);
+    if (!okStream) return;
+    renderNodeOptions(node, localized);
 }
 
 async function startTema(tema) {
     if (isBusy || !started) return;
     isBusy = true;
-    setOptionsEnabled(false);
-    hideDock();
-    await showNodeInternal(tema, '01');
-    isBusy = false;
+    const id = ++session;
+    showScreen(readerScreen);
+    resetReader();
+    await showNodeInternal(tema, '01', id);
+    if (id === session) isBusy = false;
 }
 
 async function chooseOption(tema, node, which) {
     if (isBusy || !started) return;
     isBusy = true;
-    setOptionsEnabled(false);
+    disableOptions();
     const opt = which === 'A' ? node.optA : node.optB;
     const dest = resolveTarget(tema, opt);
-    await showNodeInternal(dest.tema, dest.num);
-    isBusy = false;
+    if (dest.menu) {
+        showMenu();
+    } else {
+        const id = ++session;
+        await showNodeInternal(dest.tema, dest.num, id);
+        if (id === session) isBusy = false;
+    }
 }
 
-async function showNodeInternal(tema, num) {
-    const node = getNode(tema, num) || getNode(tema, '01');
-    current = { tema: tema, num: node.num };
-    const localizedPromise = localizeNode(node);
-    await aiThink(node.text.length);
-    const localized = await localizedPromise;
-    hideTyping();
-    await streamAnswer(localized.text);
-    renderNodeOptions(node, tema, localized);
-    scrollToBottom();
-}
-
-/* ---- 11. Eventos ------------------------------------------------------------- */
-shortcutButtons.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-        if (!isBusy && started) startTema(btn.dataset.tema);
-    });
-});
-
+/* ---- 11. Eventos ---------------------------------------------------------------------- */
 langButtons.forEach(function (btn) {
     btn.addEventListener('click', function () {
         setLang(btn.dataset.lang);
@@ -416,21 +506,23 @@ langButtons.forEach(function (btn) {
 });
 
 if (startBtn) {
-    startBtn.addEventListener('click', async function () {
+    startBtn.addEventListener('click', function () {
         if (started || isBusy) return;
         started = true;
-        welcomeScreen.classList.add('welcome-hide');
-        await wait(reduceMotion ? 50 : 380);
-        welcomeScreen.remove();
-        renderPlaceholder();
+        welcomeScreen.classList.add('leaving');
+        setTimeout(function () {
+            showScreen(menuScreen);
+            welcomeScreen.classList.remove('leaving');
+        }, 260);
     });
 }
 
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', scrollToBottom);
+if (backBtn) {
+    backBtn.addEventListener('click', function () {
+        showMenu(); // cancela geração em curso e abre o menu na hora
+    });
 }
 
-/* ---- 12. Inicialização ------------------------------------------------------- */
+/* ---- 12. Inicialização ------------------------------------------------------------------ */
 applyLang();
-renderPlaceholder();
-updateShortcutsFade();
+showScreen(welcomeScreen);
